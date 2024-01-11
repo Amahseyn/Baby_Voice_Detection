@@ -148,8 +148,6 @@ data_dir = '/content/drive/MyDrive/donateacry-corpus/Voices'
 classes = os.listdir(data_dir)
 
 
-
-
 class SoundDS(Dataset):
     def __init__(self, directory_path):
         self.classes = os.listdir(directory_path)
@@ -181,7 +179,10 @@ class SoundDS(Dataset):
 
                     aud, _ = torchaudio.load(audio_file, normalize=True)
                     reaud = torchaudio.transforms.Resample(orig_freq=aud.size(1), new_freq=self.sr)(aud)
-                    dur_aud = torchaudio.transforms.PadTrim(max_len=self.duration)(reaud)
+
+                    # Resize to match the desired duration
+                    dur_aud = torch.nn.functional.interpolate(reaud.unsqueeze(0), size=self.duration, mode='linear').squeeze(0)
+
                     shift_aud = torchaudio.transforms.TimeMasking(time_mask_param=100)(dur_aud)
                     sgram = torchaudio.transforms.MelSpectrogram(n_mels=64, n_fft=1024)(shift_aud)
                     aug_sgram = torchaudio.transforms.FrequencyMasking(freq_mask_param=10)(sgram)
@@ -219,7 +220,7 @@ class AudioClassifier (nn.Module):
         conv_layers = []
 
         # First Convolution Block with Relu and Batch Norm. Use Kaiming Initialization
-        self.conv1 = nn.Conv2d(2, 8, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2))
+        self.conv1 = nn.Conv2d(1, 8, kernel_size=(5, 5), stride=(2, 2), padding=(2, 2))
         self.relu1 = nn.ReLU()
         self.bn1 = nn.BatchNorm2d(8)
         init.kaiming_normal_(self.conv1.weight, a=0.1)
