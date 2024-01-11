@@ -148,6 +148,46 @@ data_dir = '/content/drive/MyDrive/donateacry-corpus/Voices'
 classes = os.listdir(data_dir)
 
 
+# class SoundDS(Dataset):
+#     def __init__(self, directory_path):
+#         self.classes = os.listdir(directory_path)
+#         self.data_path = directory_path
+#         self.duration = 4000
+#         self.sr = 44100
+#         self.channel = 2
+#         self.shift_pct = 0.4
+
+#     def __len__(self):
+#         length = 0
+#         for i, class_name in enumerate(self.classes):
+#             class_dir = os.path.join(self.data_path, class_name)
+#             length += len([filename for filename in os.listdir(class_dir) if filename.endswith('.wav')])
+#         return length
+
+#     def __getitem__(self, index):
+#         data = []
+#         labels = []
+
+#         for i, class_name in enumerate(self.classes):
+#             class_dir = os.path.join(self.data_path, class_name)
+#             for filename in os.listdir(class_dir):
+#                 if filename.endswith('.wav'):
+#                     audio_file = os.path.join(class_dir, filename)
+
+#                     # Get the Class ID (You need to fill in this part based on your dataset structure)
+#                     class_id = self.classes.index(class_name)
+
+#                     aud, _ = torchaudio.load(audio_file, normalize=True)
+#                     reaud = torchaudio.transforms.Resample(orig_freq=aud.size(1), new_freq=self.sr)(aud)
+
+#                     # Resize to match the desired duration
+#                     dur_aud = torch.nn.functional.interpolate(reaud.unsqueeze(0), size=self.duration, mode='linear').squeeze(0)
+
+#                     shift_aud = torchaudio.transforms.TimeMasking(time_mask_param=100)(dur_aud)
+#                     sgram = torchaudio.transforms.MelSpectrogram(n_mels=64, n_fft=1024)(shift_aud)
+#                     aug_sgram = torchaudio.transforms.FrequencyMasking(freq_mask_param=10)(sgram)
+#                     return aug_sgram, class_id
+
 class SoundDS(Dataset):
     def __init__(self, directory_path):
         self.classes = os.listdir(directory_path)
@@ -178,16 +218,18 @@ class SoundDS(Dataset):
                     class_id = self.classes.index(class_name)
 
                     aud, _ = torchaudio.load(audio_file, normalize=True)
-                    reaud = torchaudio.transforms.Resample(orig_freq=aud.size(1), new_freq=self.sr)(aud)
 
                     # Resize to match the desired duration
-                    dur_aud = torch.nn.functional.interpolate(reaud.unsqueeze(0), size=self.duration, mode='linear').squeeze(0)
+                    dur_aud = torch.nn.functional.interpolate(aud.unsqueeze(0), size=self.duration, mode='linear').squeeze(0)
 
                     shift_aud = torchaudio.transforms.TimeMasking(time_mask_param=100)(dur_aud)
                     sgram = torchaudio.transforms.MelSpectrogram(n_mels=64, n_fft=1024)(shift_aud)
                     aug_sgram = torchaudio.transforms.FrequencyMasking(freq_mask_param=10)(sgram)
 
-                    return aug_sgram, class_id
+                    data.append(aug_sgram)
+                    labels.append(class_id)
+
+        return data, labels
 
 from torch.utils.data import random_split
 directory_path = "/content/drive/MyDrive/donateacry-corpus/Voices"
