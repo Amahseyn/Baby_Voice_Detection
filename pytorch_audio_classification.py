@@ -173,7 +173,7 @@ class SoundDS(Dataset):
             for filename in os.listdir(class_dir):
                 if filename.endswith('.wav'):
                     audio_file = os.path.join(class_dir, filename)
-
+                    print("Reading ",audio_file)
                     # Get the Class ID (You need to fill in this part based on your dataset structure)
                     class_id = self.classes.index(class_name)
 
@@ -381,7 +381,7 @@ def training(model, train_dl, num_epochs):
 
   print('Finished Training')
 
-num_epochs=2   # Just for demo, adjust this higher.
+num_epochs=20   # Just for demo, adjust this higher.
 training(myModel, train_dl, num_epochs)
 
 # ----------------------------
@@ -415,3 +415,5 @@ def inference (model, val_dl):
 
 # Run inference on trained model with the validation set
 inference(myModel, val_dl)
+
+torch.save(myModel.state_dict(), 'audio_classifier_model.pth')
