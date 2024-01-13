@@ -16,10 +16,11 @@ import numpy as np
 import librosa
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.layers import Input, Conv2D, Flatten, Dense, BatchNormalization
+from tensorflow.keras.layers import Input, Conv2D, Flatten, Dense, Dropout, BatchNormalization
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.models import Model
 from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from skimage.transform import resize
 import matplotlib.pyplot as plt
 
@@ -27,7 +28,7 @@ import matplotlib.pyplot as plt
 data_dir = '/content/babycry/Data/Audio_augmentation'
 classes = os.listdir(data_dir)
 
-def load_and_preprocess_data(data_dir, classes, target_length=16000,size = 128):
+def load_and_preprocess_data(data_dir, classes, target_length=16000, size=128):
     data = []
     labels = []
 
@@ -35,7 +36,7 @@ def load_and_preprocess_data(data_dir, classes, target_length=16000,size = 128):
         class_dir = os.path.join(data_dir, class_name)
         for filename in os.listdir(class_dir):
             file_path = os.path.join(class_dir, filename)
-            audio_data, _ = librosa.load(file_path, sr=None, duration=7.0)
+            audio_data, _ = librosa.load(file_path, sr=None)
             # Perform feature extraction
             mel_spectrogram = librosa.feature.melspectrogram(y=audio_data, sr=target_length)
             chroma = librosa.feature.chroma_stft(y=audio_data, sr=target_length)
@@ -61,38 +62,43 @@ data, labels = load_and_preprocess_data(data_dir, classes)
 labels = to_categorical(labels, num_classes=len(classes))
 X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=0.2, random_state=42)
 
-# Create a simplified neural network model
+# # Data normalization
+# mean = np.mean(X_train)
+# std = np.std(X_train)
+# X_train = (X_train - mean) / std
+# X_test = (X_test - mean) / std
+
+# Create a simplified neural network model with dropout for regularization
 input_shape = X_train[0].shape
 input_layer = Input(shape=input_shape)
-x = Conv2D(128, (3, 3), activation='relu')(input_layer)
+x = Conv2D(16, (3, 3), activation='relu')(input_layer)
+x = BatchNormalization()(x)
 x = Flatten()(x)
-# x = Dense(64, activation='relu')(x)
+x = Dropout(0.9)(x)
 output_layer = Dense(len(classes), activation='softmax')(x)
 model = Model(input_layer, output_layer)
 
 # Compile the model
-optimizer = Adam(learning_rate=0.00000001)
+optimizer = Adam(learning_rate=0.00001, clipvalue=0.5)
 model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 model.summary()
 
-# Training the simplified model
-batch_size = 16
-epochs = 2000
+# Training the model with data augmentation and callbacks for early stopping, learning rate reduction, and training evaluation
+batch_size = 32
+epochs = 3500
 
-# Add callbacks for early stopping and learning rate reduction
 early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.95, patience=20, min_lr=1e-6)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8, patience=50, min_lr=1e-12)
 
-# Train the model
 history = model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs,
-                    validation_data=(X_test, y_test))
+                    validation_data=(X_test, y_test), callbacks=[ reduce_lr])
 
-# Evaluate the simplified model on the test set
+# Evaluate the model on the test set
 loss, accuracy = model.evaluate(X_test, y_test)
 print(f'Test Loss: {loss:.4f}, Test Accuracy: {accuracy * 100:.2f}%')
 
-# Save the simplified model
-model.save('audio_classification_simplified_model.h5')
+# Save the model
+model.save('audio_classification_simple_model.h5')
 
 # Plot training history
 plt.plot(history.history['accuracy'], label='Training Accuracy')
