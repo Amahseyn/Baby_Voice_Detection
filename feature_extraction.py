@@ -71,7 +71,7 @@ output_layer = Dense(len(classes), activation='softmax')(x)
 model = Model(input_layer, output_layer)
 
 # Compile the model
-optimizer = Adam(learning_rate=0.0000001)
+optimizer = Adam(learning_rate=0.00000001)
 model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 model.summary()
 
