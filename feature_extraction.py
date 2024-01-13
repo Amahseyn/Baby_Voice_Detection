@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 data_dir = '/content/babycry/Data/Audio_augmentation'
 classes = os.listdir(data_dir)
 
-def load_and_preprocess_data(data_dir, classes, target_length=16000):
+def load_and_preprocess_data(data_dir, classes, target_length=16000,size = 128):
     data = []
     labels = []
 
@@ -43,10 +43,10 @@ def load_and_preprocess_data(data_dir, classes, target_length=16000):
             tonnetz = librosa.feature.tonnetz(y=audio_data, sr=target_length)
 
             # Resize features to the same shape
-            mel_spectrogram = resize(np.expand_dims(mel_spectrogram, axis=-1), (64, 64))
-            chroma = resize(np.expand_dims(chroma, axis=-1), (64, 64))
-            spectral_contrast = resize(np.expand_dims(spectral_contrast, axis=-1), (64, 64))
-            tonnetz = resize(np.expand_dims(tonnetz, axis=-1), (64, 64))
+            mel_spectrogram = resize(np.expand_dims(mel_spectrogram, axis=-1), (size, size))
+            chroma = resize(np.expand_dims(chroma, axis=-1), (size, size))
+            spectral_contrast = resize(np.expand_dims(spectral_contrast, axis=-1), (size, size))
+            tonnetz = resize(np.expand_dims(tonnetz, axis=-1), (size, size))
 
             # Concatenate all features
             features = np.concatenate([mel_spectrogram, chroma, spectral_contrast, tonnetz], axis=-1)
@@ -64,14 +64,14 @@ X_train, X_test, y_train, y_test = train_test_split(data, labels, test_size=0.2,
 # Create a simplified neural network model
 input_shape = X_train[0].shape
 input_layer = Input(shape=input_shape)
-x = Conv2D(16, (3, 3), activation='relu')(input_layer)
+x = Conv2D(128, (3, 3), activation='relu')(input_layer)
 x = Flatten()(x)
-x = Dense(32, activation='relu')(x)
+# x = Dense(64, activation='relu')(x)
 output_layer = Dense(len(classes), activation='softmax')(x)
 model = Model(input_layer, output_layer)
 
 # Compile the model
-optimizer = Adam(learning_rate=0.0001)
+optimizer = Adam(learning_rate=0.0000001)
 model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 model.summary()
 
