@@ -10,4 +10,4 @@
 
   #### Convert Voices to Wav format
 
-    If you want to process raw data I don't recommend it because it may have bad data and bad effects on your data but you are free so first you need to convert all the files to WAV format. IOS records voices in a .caf format android records voices in a .3gp format. [convert_voices2wav](https://github.com/Amahseyn/Baby_Voice_Detection/blob/main/convert_voices2wav.py) does these conversions for you.
+  If you want to process raw data I don't recommend it because it may have bad data and bad effects on your data but you are free so first you need to convert all the files to WAV format. IOS records voices in a .caf format android records voices in a .3gp format. [convert_voices2wav](https://github.com/Amahseyn/Baby_Voice_Detection/blob/main/convert_voices2wav.py) does these conversions for you.
